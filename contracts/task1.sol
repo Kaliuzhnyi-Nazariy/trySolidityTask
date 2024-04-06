@@ -7,7 +7,17 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
-contract SolarGreen is ERC20, ERC20Burnable, Ownable, ERC20Permit {
+contract SolarGreenToken is ERC20, ERC20Burnable, Ownable, ERC20Permit {
+    constructor(
+        address initialOwner
+    )
+        Ownable(initialOwner)
+        ERC20("Solar Green", "SGR")
+        ERC20Permit("Solar Green")
+    {
+        _mint(msg.sender, 100000000 * 10 ** decimals());
+    }
+
     struct BannedUser {
         address wallet;
         string nickName;
@@ -16,30 +26,29 @@ contract SolarGreen is ERC20, ERC20Burnable, Ownable, ERC20Permit {
     BannedUser[] public blacklist;
 
     struct User {
-        address wallet;
+        address payable wallet;
         string nickName;
-        uint tokensAount;
+        uint tokensAmount;
+        uint userAmountOfUSDT;
     }
 
-    constructor(
-        address initialOwner
-    )
-        ERC20("Solar Green", "SGR")
-        Ownable(initialOwner)
-        ERC20Permit("Solar Green")
-    {
-        _mint(msg.sender, 100000000 * 10 ** decimals());
-    }
+    mapping(address => User) public users;
 
     function mint(address to, uint256 amount) public onlyOwner {
         _mint(to, amount);
     }
 
-    function addToBlackList(
-        address wallet,
-        string memory nickName
-    ) public onlyOwner {
-        blacklist.push(BannedUser(wallet, nickName));
+    function addToBlackList(address wallet) public onlyOwner {
+        require(
+            users[wallet].wallet != address(0),
+            "This user is not in user list!"
+        );
+        for (uint i = 0; i < blacklist.length; i++) {
+            if (blacklist[i].wallet == wallet) {
+                revert("User is already in the blacklist!");
+            }
+        }
+        blacklist.push(BannedUser(wallet, users[wallet].nickName));
     }
 
     function removeFromBlackList(address wallet) public onlyOwner {

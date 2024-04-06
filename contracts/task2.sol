@@ -7,7 +7,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Permit.sol";
 
-contract SolarGreen is ERC20, ERC20Burnable, Ownable, ERC20Permit {
+import "contracts/task1.sol";
+
+contract SolarGreenSell is SolarGreenToken {
     uint public fixedPrice;
     uint public fixedPriceForUSDT;
     bool public abilityToSell = false;
@@ -18,40 +20,13 @@ contract SolarGreen is ERC20, ERC20Burnable, Ownable, ERC20Permit {
         address initialOwner,
         uint _fixedPrice,
         uint _fixedPriceForUSDT
-    )
-        Ownable(initialOwner)
-        ERC20("Solar Green", "SGR")
-        ERC20Permit("Solar Green")
-    {
+    ) SolarGreenToken(initialOwner) {
         fixedPrice = _fixedPrice;
         fixedPriceForUSDT = _fixedPriceForUSDT;
-        _mint(msg.sender, 100000000 * 10 ** decimals());
     }
 
     event UserExistenceChecked(address indexed user, bool exists);
     event changeAbilityToSell(bool newValue);
-
-    struct BannedUser {
-        address wallet;
-        string nickName;
-    }
-
-    BannedUser[] public blacklist;
-
-    struct User {
-        address payable wallet;
-        string nickName;
-        uint tokensAmount;
-        uint userAmountOfUSDT;
-    }
-
-    mapping(address => User) public users;
-
-    User[] public boughtList;
-
-    function mint(address to, uint256 amount) public onlyOwner {
-        _mint(to, amount);
-    }
 
     function addUser(
         address payable _wallet,
@@ -63,29 +38,6 @@ contract SolarGreen is ERC20, ERC20Burnable, Ownable, ERC20Permit {
             "This account is already added!"
         );
         users[_wallet] = User(_wallet, _nickName, 0, amountOfUSDT);
-    }
-
-    function addToBlackList(address wallet) public onlyOwner {
-        require(
-            users[wallet].wallet != address(0),
-            "This user is not in user list!"
-        );
-        for (uint i = 0; i < blacklist.length; i++) {
-            if (blacklist[i].wallet == wallet) {
-                revert("User is already in the blacklist!");
-            }
-        }
-        blacklist.push(BannedUser(wallet, users[wallet].nickName));
-    }
-
-    function removeFromBlackList(address wallet) public onlyOwner {
-        for (uint i = 0; i < blacklist.length; i++) {
-            if (blacklist[i].wallet == wallet) {
-                blacklist[i] = blacklist[blacklist.length - 1];
-                blacklist.pop();
-                break;
-            }
-        }
     }
 
     function setInfoForSale(uint _upToWhenAbillityToSell) external onlyOwner {
@@ -165,8 +117,6 @@ contract SolarGreen is ERC20, ERC20Burnable, Ownable, ERC20Permit {
         boughtForNow += amountOfTokens;
 
         users[msg.sender].tokensAmount += amountOfTokens;
-
-        boughtList.push(users[msg.sender]);
     }
 
     function buyTokenByUSDT(uint amountOfTokens, uint amountOfUSDT) public {
@@ -208,7 +158,5 @@ contract SolarGreen is ERC20, ERC20Burnable, Ownable, ERC20Permit {
         boughtForNow += amountOfTokens;
 
         users[msg.sender].tokensAmount += amountOfTokens;
-
-        boughtList.push(users[msg.sender]);
     }
 }
